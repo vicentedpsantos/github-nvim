@@ -1,4 +1,4 @@
-# GitHub Open.nvim
+# GitHub-Nvim
 
 A lightweight Neovim plugin to deal with Github shenanigans.
 
@@ -21,7 +21,7 @@ Add the following configuration to your Lazy.nvim setup:
 
 ```lua
 {
-    "vicentedpsantos/github-open.nvim",
+    "vicentedpsantos/github-nvim",
     config = function()
         require('github_open')
     end
