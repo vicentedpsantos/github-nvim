@@ -28,11 +28,46 @@ local function parse_github_url(repo_url)
     end
   end
 
-   return nil, "Failed to parse GitHub URL"
+  return nil, "Failed to parse GitHub URL"
+end
+
+local function get_repo_root()
+  local handle = io.popen("git rev-parse --show-toplevel 2>/dev/null")
+  if not handle then
+    return nil, "Failed to get repository root"
+  end
+
+  local result = handle:read("*a"):gsub("%s+$", "") -- Remove trailing whitespace
+  handle:close()
+
+  if result == "" then
+    return nil, "Not a git repository"
+  end
+  return result
+end
+
+local function get_branch_or_commit()
+  local handle = io.popen("git rev-parse --abbrev-ref HEAD 2>/dev/null || git rev-parse HEAD 2>/dev/null")
+  if not handle then
+    return nil, "Failed to get branch or commit"
+  end
+
+  local result = handle:read("*a"):gsub("%s+$", "")
+  handle:close()
+
+  if result == "" then
+    return nil, "Failed to resolve branch or commit"
+  end
+  return result
+end
+
+local function get_relative_file_path(repo_root)
+  local filepath = vim.fn.expand("%:p")
+  return filepath:sub(#repo_root + 2)
 end
 
 local function open_url(url)
-  vim.notify("Opening URL: " .. url, vim.log.levels.INFO)
+  vim.notify("Opening " .. url, vim.log.levels.INFO)
 
   local open_command = nil
   if vim.fn.has("mac") == 1 then
@@ -48,6 +83,41 @@ local function open_url(url)
   else
     vim.notify("Platform not supported for opening URLs", vim.log.levels.ERROR)
   end
+end
+
+function M.open_current_file_on_github()
+  local repo_url, err = get_repo_url()
+  if not repo_url then
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+    return
+  end
+
+  local github_url, parse_err = parse_github_url(repo_url)
+  if not github_url then
+    vim.notify("Error: " .. parse_err, vim.log.levels.ERROR)
+    return
+  end
+
+  local repo_root, root_err = get_repo_root()
+  if not repo_root then
+    vim.notify("Error: " .. root_err, vim.log.levels.ERROR)
+    return
+  end
+
+  local branch_or_commit, branch_err = get_branch_or_commit()
+  if not branch_or_commit then
+    vim.notify("Error: " .. branch_err, vim.log.levels.ERROR)
+    return
+  end
+
+  local relative_file_path = get_relative_file_path(repo_root)
+  if not relative_file_path or relative_file_path == "" then
+    vim.notify("Error: Could not resolve the current file's path", vim.log.levels.ERROR)
+    return
+  end
+
+  local file_url = string.format("%s/blob/%s/%s", github_url, branch_or_commit, relative_file_path)
+  open_url(file_url)
 end
 
 function M.open_github_repo()
@@ -70,6 +140,12 @@ vim.api.nvim_create_user_command(
   "OpenGitHub",
   M.open_github_repo,
   { desc = "Open the GitHub repository of the current project" }
+)
+
+vim.api.nvim_create_user_command(
+  "OpenGitHubFile",
+  M.open_current_file_on_github,
+  { desc = "Open the current file on GitHub" }
 )
 
 return M
