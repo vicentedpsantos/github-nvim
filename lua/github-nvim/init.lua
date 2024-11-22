@@ -6,7 +6,7 @@ local function get_repo_url()
     return nil, "Failed to execute git command"
   end
 
-  local result = handle:read("*a"):gsub("%s+$", "") -- Remove trailing whitespace
+  local result = handle:read("*a"):gsub("%s+$", "")
   handle:close()
 
   if result == "" then
@@ -37,7 +37,7 @@ local function get_repo_root()
     return nil, "Failed to get repository root"
   end
 
-  local result = handle:read("*a"):gsub("%s+$", "") -- Remove trailing whitespace
+  local result = handle:read("*a"):gsub("%s+$", "")
   handle:close()
 
   if result == "" then
