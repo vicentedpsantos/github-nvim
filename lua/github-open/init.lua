@@ -32,11 +32,13 @@ local function parse_github_url(repo_url)
 end
 
 local function open_url(url)
+  vim.notify("Opening URL: " .. url, vim.log.levels.INFO)
+
   local open_command = nil
-  if vim.fn.has("unix") == 1 then
-    open_command = "xdg-open '" .. url .. "'"
-  elseif vim.fn.has("mac") == 1 then
+  if vim.fn.has("mac") == 1 then
     open_command = "open '" .. url .. "'"
+  elseif vim.fn.has("unix") == 1 then
+    open_command = "xdg-open '" .. url .. "'"
   elseif vim.fn.has("win32") == 1 then
     open_command = "start " .. url
   end
