@@ -2,11 +2,6 @@
 
 A lightweight Neovim plugin to deal with Github shenanigans.
 
-## Features
-
-- **Open Repository**: Quickly navigate to your project's GitHub repository homepage.
-- **Open Current File**: Open the current file on GitHub at the active branch or commit.
-
 ## Requirements
 
 - Neovim 0.7+ (with Lua support)
@@ -37,6 +32,12 @@ Add the following configuration to your Lazy.nvim setup:
 
 2. **`:OpenGitHubFile`**
    - Opens the currently edited file on GitHub at the current branch or commit.
+
+3. **`:OpenGitHubFileLine`**
+   - Opens the currently edited file on GitHub at the current branch or commit and scrolls to the current line.
+
+4. **`:CopyGitHubFileLine`**
+   - Copies the GitHub URL for the current file and line to the system clipboard.
 
 ## Notes
 

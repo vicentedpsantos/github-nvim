@@ -85,6 +85,24 @@ local function open_url(url)
   end
 end
 
+local function copy_to_clipboard(text)
+  local clipboard_command = nil
+  if vim.fn.has("mac") == 1 then
+    clipboard_command = "echo '" .. text .. "' | pbcopy"
+  elseif vim.fn.has("unix") == 1 then
+    clipboard_command = "echo '" .. text .. "' | xclip -selection clipboard"
+  elseif vim.fn.has("win32") == 1 then
+    clipboard_command = "echo " .. text .. " | clip"
+  end
+
+  if clipboard_command then
+    os.execute(clipboard_command)
+    vim.notify("Copied to clipboard: " .. text, vim.log.levels.INFO)
+  else
+    vim.notify("Platform not supported for clipboard copy", vim.log.levels.ERROR)
+  end
+end
+
 local function build_github_file_url(include_line)
   local repo_url, err = get_repo_url()
   if not repo_url then
@@ -137,6 +155,15 @@ function M.open_current_file_on_github_with_line()
   open_url(file_url)
 end
 
+function M.copy_current_file_url_with_line()
+  local file_url, err = build_github_file_url(true)
+  if not file_url then
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+    return
+  end
+  copy_to_clipboard(file_url)
+end
+
 function M.open_github_repo()
   local repo_url, err = get_repo_url()
   if not repo_url then
@@ -169,6 +196,12 @@ vim.api.nvim_create_user_command(
   "OpenGitHubFileLine",
   M.open_current_file_on_github_with_line,
   { desc = "Open the current file on GitHub at the current line" }
+)
+
+vim.api.nvim_create_user_command(
+  "CopyGitHubFileLine",
+  M.copy_current_file_url_with_line,
+  { desc = "Copy the current file URL on GitHub with line to the clipboard" }
 )
 
 return M
