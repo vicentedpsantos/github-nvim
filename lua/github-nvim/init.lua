@@ -85,38 +85,55 @@ local function open_url(url)
   end
 end
 
-function M.open_current_file_on_github()
+local function build_github_file_url(include_line)
   local repo_url, err = get_repo_url()
   if not repo_url then
-    vim.notify("Error: " .. err, vim.log.levels.ERROR)
-    return
+    return nil, err
   end
 
   local github_url, parse_err = parse_github_url(repo_url)
   if not github_url then
-    vim.notify("Error: " .. parse_err, vim.log.levels.ERROR)
-    return
+    return nil, parse_err
   end
 
   local repo_root, root_err = get_repo_root()
   if not repo_root then
-    vim.notify("Error: " .. root_err, vim.log.levels.ERROR)
-    return
+    return nil, root_err
   end
 
   local branch_or_commit, branch_err = get_branch_or_commit()
   if not branch_or_commit then
-    vim.notify("Error: " .. branch_err, vim.log.levels.ERROR)
-    return
+    return nil, branch_err
   end
 
   local relative_file_path = get_relative_file_path(repo_root)
   if not relative_file_path or relative_file_path == "" then
-    vim.notify("Error: Could not resolve the current file's path", vim.log.levels.ERROR)
-    return
+    return nil, "Could not resolve the current file's path"
   end
 
-  local file_url = string.format("%s/blob/%s/%s", github_url, branch_or_commit, relative_file_path)
+  if include_line then
+    local line_number = vim.fn.line(".")
+    return string.format("%s/blob/%s/%s#L%d", github_url, branch_or_commit, relative_file_path, line_number)
+  else
+    return string.format("%s/blob/%s/%s", github_url, branch_or_commit, relative_file_path)
+  end
+end
+
+function M.open_current_file_on_github()
+  local file_url, err = build_github_file_url(false)
+  if not file_url then
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+    return
+  end
+  open_url(file_url)
+end
+
+function M.open_current_file_on_github_with_line()
+  local file_url, err = build_github_file_url(true)
+  if not file_url then
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+    return
+  end
   open_url(file_url)
 end
 
@@ -146,6 +163,12 @@ vim.api.nvim_create_user_command(
   "OpenGitHubFile",
   M.open_current_file_on_github,
   { desc = "Open the current file on GitHub" }
+)
+
+vim.api.nvim_create_user_command(
+  "OpenGitHubFileLine",
+  M.open_current_file_on_github_with_line,
+  { desc = "Open the current file on GitHub at the current line" }
 )
 
 return M
