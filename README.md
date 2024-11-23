@@ -1,6 +1,6 @@
 # GitHub-Nvim
 
-A lightweight Neovim plugin to deal with Github shenanigans.
+A lightweight Neovim plugin to deal with Github shenanigans. One of the core principles of this plugin is that it will **never add a dependency**, keeping things as light and simple as possible.
 
 ## Requirements
 
