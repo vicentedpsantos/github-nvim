@@ -16,10 +16,10 @@ Add the following configuration to your Lazy.nvim setup:
 
 ```lua
 {
-    "vicentedpsantos/github-nvim",
-    config = function()
-        require('github_open')
-    end
+  "vicentedpsantos/github-nvim",
+  config = function()
+    require('github-nvim')
+  end
 }
 ```
 
