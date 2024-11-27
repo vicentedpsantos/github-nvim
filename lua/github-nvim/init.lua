@@ -5,7 +5,7 @@ local url = require("github-nvim.url")
 local system = require("github-nvim.system")
 local command = require("github-nvim.command")
 
-local function build_github_file_url(include_line)
+local function build_github_file_url_with_range(include_line, line1, line2)
   local repo_url, err = git.get_repo_url()
   if not repo_url then
     return nil, err
@@ -32,15 +32,18 @@ local function build_github_file_url(include_line)
   end
 
   if include_line then
-    local line_number = vim.fn.line(".")
-    return string.format("%s/blob/%s/%s#L%d", github_url, branch_or_commit, relative_file_path, line_number)
+    if line1 and line2 and line1 ~= line2 then
+      return string.format("%s/blob/%s/%s#L%d-L%d", github_url, branch_or_commit, relative_file_path, line1, line2)
+    else
+      return string.format("%s/blob/%s/%s#L%d", github_url, branch_or_commit, relative_file_path, line1 or vim.fn.line("."))
+    end
   else
     return string.format("%s/blob/%s/%s", github_url, branch_or_commit, relative_file_path)
   end
 end
 
-function M.open_current_file_on_github()
-  local file_url, err = build_github_file_url(false)
+function M.open_file_on_github_with_line_range(line1, line2)
+  local file_url, err = build_github_file_url_with_range(true, line1, line2)
   if not file_url then
     vim.notify("Error: " .. err, vim.log.levels.ERROR)
     return
@@ -48,22 +51,22 @@ function M.open_current_file_on_github()
   system.open_url(file_url)
 end
 
-function M.open_current_file_on_github_with_line()
-  local file_url, err = build_github_file_url(true)
-  if not file_url then
-    vim.notify("Error: " .. err, vim.log.levels.ERROR)
-    return
-  end
-  system.open_url(file_url)
-end
-
-function M.copy_current_file_url_with_line()
-  local file_url, err = build_github_file_url(true)
+function M.copy_file_url_with_line_range(line1, line2)
+  local file_url, err = build_github_file_url_with_range(true, line1, line2)
   if not file_url then
     vim.notify("Error: " .. err, vim.log.levels.ERROR)
     return
   end
   system.copy_to_clipboard(file_url)
+end
+
+function M.open_current_file_on_github()
+  local file_url, err = build_github_file_url_with_range(false)
+  if not file_url then
+    vim.notify("Error: " .. err, vim.log.levels.ERROR)
+    return
+  end
+  system.open_url(file_url)
 end
 
 function M.open_github_repo()
@@ -82,9 +85,24 @@ function M.open_github_repo()
   system.open_url(github_url)
 end
 
-command.create_command("OpenGitHub", M.open_github_repo, "Open the GitHub repository of the current project")
-command.create_command("OpenGitHubFile", M.open_current_file_on_github, "Open the current file on GitHub")
-command.create_command("OpenGitHubFileLine", M.open_current_file_on_github_with_line, "Open the current file on GitHub at the current line")
-command.create_command("CopyGitHubFileLine", M.copy_current_file_url_with_line, "Copy the current file URL on GitHub with line to the clipboard")
+command.create_command("OpenGitHub", M.open_github_repo, { desc =  "Open the GitHub repository of the current project" })
+command.create_command("OpenGitHubFile", M.open_current_file_on_github, { desc = "Open the current file on GitHub" })
+
+command.create_command(
+  "OpenGitHubFileLine",
+  function(opts)
+    vim.notify("Opening file on GitHub..." .. opts.line1 .. " and " .. opts.line2, vim.log.levels.INFO)
+    M.open_file_on_github_with_line_range(opts.line1, opts.line2)
+  end,
+  { desc = "Open the current file on GitHub at the selected line or range", range = true }
+)
+
+command.create_command(
+  "CopyGitHubFileLine",
+  function(opts)
+    M.copy_file_url_with_line_range(opts.line1, opts.line2)
+  end,
+  { desc = "Copy the GitHub URL for the current file and selected line or range to the clipboard", range = true }
+)
 
 return M
